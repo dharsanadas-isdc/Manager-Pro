@@ -40,7 +40,7 @@ const firebaseConfig = {
 };
 
 // Use a flag to track if we have a valid configuration to avoid "projects/undefined" errors
-const isFirebaseConfigured = !!firebaseConfig.projectId && !!firebaseConfig.apiKey;
+export const isFirebaseConfigured = !!firebaseConfig.projectId && !!firebaseConfig.apiKey;
 
 let app: FirebaseApp | undefined;
 let db: Firestore | undefined;

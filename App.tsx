@@ -14,8 +14,8 @@ import {
   seedInitialData,
   addProject as dbAddProject,
   deleteProject as dbDeleteProject,
-  isSupabaseConfigured
-} from './services/supabase';
+  isFirebaseConfigured
+} from './services/firebase';
 
 const CURRENT_USER_ID = 'u1';
 
@@ -55,7 +55,7 @@ const AnimatedCounter: React.FC<{ value: number }> = ({ value }) => {
 const showNotification = (message: string) => {
   const toast = document.createElement('div');
   toast.className = "fixed bottom-6 right-6 bg-slate-900 text-white px-6 py-3 rounded-lg shadow-2xl z-[100] border border-slate-700 font-medium animate-in slide-in-from-bottom duration-300";
-  toast.innerHTML = `<div class="flex items-center gap-2"><div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div><span>${message}</span></div>`;
+  toast.innerHTML = `<div class=\"flex items-center gap-2\"><div class=\"w-2 h-2 bg-emerald-500 rounded-full animate-pulse\"></div><span>${message}</span></div>`;
   document.body.appendChild(toast);
   setTimeout(() => {
     toast.style.opacity = '0';
@@ -86,9 +86,9 @@ const TaskStats: React.FC<{ tasks: Task[], activeFilter: Status | 'TOTAL' | null
   return (
     <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 relative">
       <div className="absolute -top-6 right-2 flex items-center gap-1.5 bg-white px-3 py-1 rounded-full border border-slate-100 shadow-sm">
-        <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${isSupabaseConfigured ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
+        <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${isFirebaseConfigured ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
         <span className="text-[9px] font-black uppercase text-slate-500 tracking-widest">
-          {isSupabaseConfigured ? 'Live Workspace' : 'Offline / Config Pending'}
+          {isFirebaseConfigured ? 'Live Workspace' : 'Offline / Config Pending'}
         </span>
       </div>
       {cards.map((s, i) => (
@@ -298,22 +298,22 @@ const SpreadsheetView: React.FC<{
     return filtered;
   }, [tasks, statusFilter]);
 
-  if (loading && isSupabaseConfigured) {
+  if (loading && isFirebaseConfigured) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
         <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Connecting to Supabase...</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Connecting to Firebase...</p>
       </div>
     );
   }
 
   return (
     <div className="p-4 sm:p-8 max-w-[1800px] mx-auto space-y-8 animate-in fade-in duration-500">
-      {!isSupabaseConfigured && (
+      {!isFirebaseConfigured && (
         <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex items-center justify-between">
           <div className="flex items-center gap-3">
              <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
-             <p className="text-xs font-bold text-amber-700 uppercase tracking-tight">Supabase Config Missing in Environment. Running in local mock mode.</p>
+             <p className="text-xs font-bold text-amber-700 uppercase tracking-tight">Firebase Config Missing in Environment. Running in local mock mode.</p>
           </div>
           <button onClick={() => window.location.reload()} className="text-[10px] font-black uppercase text-amber-600 hover:underline">Check Again</button>
         </div>
@@ -366,7 +366,7 @@ const SpreadsheetView: React.FC<{
                     onUpdate={(id, updates) => handleUpdateSubTask(task.id, id, updates)} onHandoff={() => setHandoffItem({ id: sub.id, isSub: true, parentId: task.id })}
                     onDelete={(id) => dbUpdateTask(task.id, { subTasks: task.subTasks.filter(s => s.id !== id) })}
                   />
-                ))}
+                ))}\
               </React.Fragment>
             ))}
           </tbody>
@@ -435,7 +435,7 @@ const App: React.FC = () => {
 
     const init = async () => {
       // Fallback to mock data if not configured
-      if (!isSupabaseConfigured) {
+      if (!isFirebaseConfigured) {
         setTasks(INITIAL_TASKS);
         setProjects(MOCK_PROJECTS);
         setLoading(false);
