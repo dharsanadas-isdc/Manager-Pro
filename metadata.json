@@ -1,0 +1,7 @@
+{
+  "name": "Task First",
+  "description": "A comprehensive project management platform for managing tasks, subtasks, assignments, and detailed performance reporting with AI-powered insights.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
