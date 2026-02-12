@@ -68,11 +68,11 @@ app.post('/api/ai/report', async (req, res) => {
   }
 });
 
-// Serve static frontend files (assuming build output is here or using dev server)
-app.use(express.static(__dirname));
+// Serve static frontend files from the 'dist' directory
+app.use(express.static(path.join(__dirname, 'dist')));
 
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 app.listen(PORT, () => {
