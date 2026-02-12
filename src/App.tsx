@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { HashRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { Task, Status, Priority, User, Project, SubTask } from './types';
@@ -55,13 +54,34 @@ const AnimatedCounter: React.FC<{ value: number }> = ({ value }) => {
 const showNotification = (message: string) => {
   const toast = document.createElement('div');
   toast.className = "fixed bottom-6 right-6 bg-slate-900 text-white px-6 py-3 rounded-lg shadow-2xl z-[100] border border-slate-700 font-medium animate-in slide-in-from-bottom duration-300";
-  toast.innerHTML = `<div class=\"flex items-center gap-2\"><div class=\"w-2 h-2 bg-emerald-500 rounded-full animate-pulse\"></div><span>${message}</span></div>`;
+  toast.innerHTML = `<div class="flex items-center gap-2"><div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div><span>${message}</span></div>`;
   document.body.appendChild(toast);
   setTimeout(() => {
     toast.style.opacity = '0';
     setTimeout(() => { if (toast.parentNode) document.body.removeChild(toast); }, 300);
   }, 3000);
 };
+
+const ConfigMissingOverlay: React.FC = () => (
+  <div className="fixed inset-0 z-[1000] bg-slate-900/80 backdrop-blur-xl flex items-center justify-center p-6 text-center">
+    <div className="bg-white rounded-[40px] p-12 max-w-lg shadow-2xl border border-white/20">
+      <div className="w-20 h-20 bg-amber-100 rounded-3xl flex items-center justify-center mx-auto mb-8">
+        <svg className="w-10 h-10 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 17c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+      <h2 className="text-3xl font-black mb-4 tracking-tighter">FIREBASE REQUIRED</h2>
+      <p className="text-slate-500 mb-8 font-medium leading-relaxed">
+        The application is not connected to a backend. Please update your <code className="bg-slate-100 px-2 py-1 rounded text-indigo-600 font-bold">.env</code> file with your <code className="font-bold">FIREBASE_PROJECT_ID</code> and <code className="font-bold">FIREBASE_API_KEY</code>.
+      </p>
+      <div className="bg-slate-50 p-4 rounded-2xl text-left text-xs font-mono text-slate-400 border border-slate-100 mb-8">
+        FIREBASE_PROJECT_ID=your-project-id<br/>
+        FIREBASE_API_KEY=your_api_key_here
+      </div>
+      <p className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Restart the app once updated</p>
+    </div>
+  </div>
+);
 
 const TaskStats: React.FC<{ tasks: Task[], activeFilter: Status | 'TOTAL' | null, setFilter: (s: Status | 'TOTAL' | null) => void }> = ({ tasks, activeFilter, setFilter }) => {
   const stats = useMemo(() => {
@@ -86,10 +106,8 @@ const TaskStats: React.FC<{ tasks: Task[], activeFilter: Status | 'TOTAL' | null
   return (
     <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 relative">
       <div className="absolute -top-6 right-2 flex items-center gap-1.5 bg-white px-3 py-1 rounded-full border border-slate-100 shadow-sm">
-        <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${isFirebaseConfigured ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
-        <span className="text-[9px] font-black uppercase text-slate-500 tracking-widest">
-          {isFirebaseConfigured ? 'Live Workspace' : 'Offline / Config Pending'}
-        </span>
+        <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+        <span className="text-[9px] font-black uppercase text-slate-500 tracking-widest">Connected to Firebase</span>
       </div>
       {cards.map((s, i) => (
         <button 
@@ -231,6 +249,7 @@ const SpreadsheetView: React.FC<{
     setIsAddingTask(true);
     try {
       let targetProjectId = projects[0]?.id;
+      
       if (!targetProjectId) {
         const newProj = await dbAddProject("Default Project");
         targetProjectId = newProj.id;
@@ -258,9 +277,10 @@ const SpreadsheetView: React.FC<{
       };
       
       await dbAddTask(newTask);
-      showNotification("Item synchronized.");
+      showNotification("Mission saved to Firebase.");
     } catch (err) {
-      showNotification("Offline sync failed.");
+      console.error(err);
+      showNotification("Persistence error.");
     } finally {
       setIsAddingTask(false);
     }
@@ -302,22 +322,14 @@ const SpreadsheetView: React.FC<{
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
         <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Connecting to Firebase...</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Loading Firebase DB...</p>
       </div>
     );
   }
 
   return (
     <div className="p-4 sm:p-8 max-w-[1800px] mx-auto space-y-8 animate-in fade-in duration-500">
-      {!isFirebaseConfigured && (
-        <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex items-center justify-between">
-          <div className="flex items-center gap-3">
-             <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
-             <p className="text-xs font-bold text-amber-700 uppercase tracking-tight">Firebase Config Missing in Environment. Running in local mock mode.</p>
-          </div>
-          <button onClick={() => window.location.reload()} className="text-[10px] font-black uppercase text-amber-600 hover:underline">Check Again</button>
-        </div>
-      )}
+      {!isFirebaseConfigured && <ConfigMissingOverlay />}
       
       <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
         <div className="flex gap-2">
@@ -351,7 +363,7 @@ const SpreadsheetView: React.FC<{
           <tbody>
             {filteredTasks.length === 0 ? (
               <tr>
-                <td colSpan={9} className="py-20 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">No records found</td>
+                <td colSpan={9} className="py-20 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">No records found in active mission view</td>
               </tr>
             ) : filteredTasks.map((task, idx) => (
               <React.Fragment key={task.id}>
@@ -366,14 +378,25 @@ const SpreadsheetView: React.FC<{
                     onUpdate={(id, updates) => handleUpdateSubTask(task.id, id, updates)} onHandoff={() => setHandoffItem({ id: sub.id, isSub: true, parentId: task.id })}
                     onDelete={(id) => dbUpdateTask(task.id, { subTasks: task.subTasks.filter(s => s.id !== id) })}
                   />
-                ))}\
+                ))}
               </React.Fragment>
             ))}
           </tbody>
         </table>
         {userRole === 'manager' && (
-          <button onClick={addNewTask} disabled={isAddingTask} className="w-full py-5 text-[11px] font-black uppercase tracking-[0.2em] text-indigo-600 hover:bg-indigo-50 transition-all border-t border-slate-100 bg-white disabled:opacity-50 flex items-center justify-center gap-3">
-            {isAddingTask ? <><div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>Saving...</> : '＋ Add New Mission Item'}
+          <button 
+            onClick={addNewTask} 
+            disabled={isAddingTask || !isFirebaseConfigured}
+            className="w-full py-5 text-[11px] font-black uppercase tracking-[0.2em] text-indigo-600 hover:bg-indigo-50 transition-all border-t border-slate-100 bg-white disabled:opacity-50 flex items-center justify-center gap-3"
+          >
+            {isAddingTask ? (
+              <>
+                <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                Saving to DB...
+              </>
+            ) : (
+              '＋ Add New Mission Item'
+            )}
           </button>
         )}
       </div>
@@ -381,7 +404,7 @@ const SpreadsheetView: React.FC<{
       {isProjectModalOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-md">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 p-8">
-            <h2 className="text-xl font-black mb-6 text-slate-800 uppercase tracking-tight">Workspace Projects</h2>
+            <h2 className="text-xl font-black mb-6 text-slate-800">Workspace Projects</h2>
             <div className="space-y-3 mb-6 max-h-[300px] overflow-y-auto pr-2">
               {projects.map((p) => (
                 <div key={p.id} className="flex justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-100">
@@ -407,15 +430,15 @@ const SpreadsheetView: React.FC<{
       {handoffItem && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-xl">
           <div className="bg-white rounded-[40px] p-10 max-w-lg w-full text-center shadow-2xl border border-white/20">
-            <h2 className="text-3xl font-black mb-4 uppercase tracking-tighter">Deliverable Handoff</h2>
-            <p className="text-slate-500 mb-8 font-medium">Finalizing this item will archive it and update analytics.</p>
+            <h2 className="text-3xl font-black mb-4">MISSION COMPLETE</h2>
+            <p className="text-slate-500 mb-8 font-medium">Finalizing this item will move it to the archive and update performance analytics.</p>
             <button onClick={() => {
               if (handoffItem.isSub && handoffItem.parentId) handleUpdateSubTask(handoffItem.parentId, handoffItem.id, { status: Status.FINISHED, completedAt: new Date().toISOString() });
               else handleUpdateTask(handoffItem.id, { status: Status.FINISHED, completedAt: new Date().toISOString() });
               setHandoffItem(null);
-              showNotification("Deliverable successfully handoffed.");
-            }} className="w-full py-4 bg-emerald-600 text-white font-black rounded-2xl shadow-xl hover:bg-emerald-700 transition-colors uppercase text-xs tracking-widest">Confirm Completion</button>
-            <button onClick={() => setHandoffItem(null)} className="mt-6 text-slate-400 font-bold hover:text-slate-600 text-xs uppercase tracking-widest">Cancel</button>
+              showNotification("Deliverable archived.");
+            }} className="w-full py-4 bg-emerald-600 text-white font-black rounded-2xl shadow-xl hover:bg-emerald-700 transition-colors">Confirm Completion</button>
+            <button onClick={() => setHandoffItem(null)} className="mt-6 text-slate-400 font-bold hover:text-slate-600">Dismiss</button>
           </div>
         </div>
       )}
@@ -430,33 +453,24 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let unsubTasks: () => void;
-    let unsubProjects: () => void;
+    let unsubTasks: () => void | undefined;
+    let unsubProjects: () => void | undefined;
 
     const init = async () => {
-      // Fallback to mock data if not configured
       if (!isFirebaseConfigured) {
-        setTasks(INITIAL_TASKS);
-        setProjects(MOCK_PROJECTS);
         setLoading(false);
         return;
       }
       
-      // Seed and subscribe
-      try {
-        await seedInitialData(INITIAL_TASKS, MOCK_PROJECTS);
-        unsubTasks = subscribeToTasks((data) => {
-          setTasks(data.length > 0 ? [...data] : INITIAL_TASKS); 
-          setLoading(false);
-        });
-        unsubProjects = subscribeToProjects((data) => {
-          setProjects(data.length > 0 ? [...data] : MOCK_PROJECTS);
-        });
-      } catch (err) {
-        setTasks(INITIAL_TASKS);
-        setProjects(MOCK_PROJECTS);
+      await seedInitialData(INITIAL_TASKS, MOCK_PROJECTS);
+      
+      unsubTasks = subscribeToTasks((data) => {
+        setTasks([...data]); 
         setLoading(false);
-      }
+      });
+      unsubProjects = subscribeToProjects((data) => {
+        setProjects([...data]);
+      });
     };
 
     init();
